@@ -17,7 +17,7 @@ import {SharesMathLib} from "morpho-blue/src/libraries/SharesMathLib.sol";
 contract StandbyQueue is AbstractCallback {
     using SharesMathLib for uint256;
 
-    /// @dev A ticket with `assets == 0` is closed: paid in full, left, or voided.
+    /// @dev A ticket with `assets == 0` is closed: paid in full, cancelled, or voided.
     struct Ticket {
         address owner;
         uint128 assets;
@@ -40,8 +40,8 @@ contract StandbyQueue is AbstractCallback {
 
     /// @notice A lender joined the queue.
     event Joined(Id indexed id, address indexed owner, uint256 ticket, uint256 assets);
-    /// @notice A lender left the queue before being paid in full.
-    event Left(Id indexed id, address indexed owner, uint256 ticket, uint256 assetsUnpaid);
+    /// @notice A lender cancelled their ticket before it was paid in full.
+    event Cancelled(Id indexed id, address indexed owner, uint256 ticket, uint256 assetsUnpaid);
     /// @notice The queue withdrew `assets` from Morpho to `owner`. `assetsLeft` is what the ticket still waits for.
     event Paid(Id indexed id, address indexed owner, uint256 ticket, uint256 assets, uint256 assetsLeft);
     /// @notice A ticket was closed because its owner could not be paid.
@@ -53,7 +53,12 @@ contract StandbyQueue is AbstractCallback {
     /// @notice One delivered callback. `originBlock` is the block of the event that caused it, on this chain,
     ///         so `settledBlock - originBlock` is the whole loop measured in this chain's blocks.
     event Loop(
-        Id indexed id, uint256 originBlock, uint256 settledBlock, uint256 originTxHash, uint256 assetsPaid, uint256 tickets
+        Id indexed id,
+        uint256 originBlock,
+        uint256 settledBlock,
+        uint256 originTxHash,
+        uint256 assetsPaid,
+        uint256 tickets
     );
 
     /// @notice Tickets paid or voided per call, so one callback has a known gas ceiling.
@@ -122,14 +127,15 @@ contract StandbyQueue is AbstractCallback {
 
         MORPHO.accrueInterest(mp);
         Market memory m = MORPHO.market(id);
-        uint256 supplied = MORPHO.position(id, msg.sender).supplyShares.toAssetsDown(
-            m.totalSupplyAssets, m.totalSupplyShares
-        );
+        uint256 supplied =
+            MORPHO.position(id, msg.sender).supplyShares.toAssetsDown(m.totalSupplyAssets, m.totalSupplyShares);
         if (supplied == 0) revert NothingSupplied();
         if (assets > supplied) assets = supplied;
 
         Ticket[] storage q = _tickets[id];
         ticket = q.length;
+        // `assets` is at most the lender's position, which is bounded by the market's uint128 total.
+        // forge-lint: disable-next-line(unsafe-typecast)
         q.push(Ticket({owner: msg.sender, assets: uint128(assets)}));
         ticketOf[id][msg.sender] = ticket + 1;
         pendingAssets[id] += assets;
@@ -140,14 +146,14 @@ contract StandbyQueue is AbstractCallback {
         emit QueueState(id, pendingAssets[id], openTickets[id], more);
     }
 
-    /// @notice Leave the queue. Anything already paid stays paid.
-    function leave(Id id) external nonReentrant {
+    /// @notice Cancel your ticket. Anything already paid stays paid.
+    function cancel(Id id) external nonReentrant {
         uint256 slot = ticketOf[id][msg.sender];
         if (slot == 0) revert NotQueued();
         Ticket storage t = _tickets[id][slot - 1];
         uint256 unpaid = t.assets;
         _close(id, t, unpaid);
-        emit Left(id, msg.sender, slot - 1, unpaid);
+        emit Cancelled(id, msg.sender, slot - 1, unpaid);
         emit QueueState(id, pendingAssets[id], openTickets[id], false);
     }
 
@@ -251,7 +257,10 @@ contract StandbyQueue is AbstractCallback {
             }
 
             try MORPHO.withdraw(mp, pay, 0, owner, owner) returns (uint256, uint256 sharesBurned) {
+                // Both are parts of the market's own uint128 totals, which Morpho has just reduced by them.
+                // forge-lint: disable-next-line(unsafe-typecast)
                 m.totalSupplyAssets -= uint128(pay);
+                // forge-lint: disable-next-line(unsafe-typecast)
                 m.totalSupplyShares -= uint128(sharesBurned);
                 liquid -= pay;
                 paid += pay;
@@ -261,6 +270,8 @@ contract StandbyQueue is AbstractCallback {
                     emit Paid(id, owner, h, pay, 0);
                     h += 1;
                 } else {
+                    // Smaller than `want`, which was read from a uint128.
+                    // forge-lint: disable-next-line(unsafe-typecast)
                     t.assets = uint128(want - pay);
                     pendingAssets[id] -= pay;
                     emit Paid(id, owner, h, pay, want - pay);
