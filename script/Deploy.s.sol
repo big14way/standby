@@ -21,7 +21,9 @@ library BaseSepolia {
 // Deployment order, because the queue fixes the watcher's address at construction:
 //   1. DeployWatcher   on Reactive Lasna
 //   2. DeployQueue     on Base Sepolia   (WATCHER=<address from 1>)
-//   3. BindQueue       on Reactive Lasna (WATCHER=…, QUEUE=<address from 2>)
+//   3. On Reactive Lasna, bind the two with a plain transaction:
+//        cast send $WATCHER "setQueue(address)" $QUEUE --rpc-url https://lasna-rpc.rnk.dev/ --private-key …
+//      (a forge script cannot simulate this one locally: it calls Lasna's system contract)
 //   4. SetupMarket     on Base Sepolia   (the demo market)
 
 /// @notice Step 1, on Reactive Lasna. `WATCHER_FUNDS` (wei of lREACT, default 1) pays for reactions.
@@ -48,18 +50,6 @@ contract DeployQueue is Script {
         );
         vm.stopBroadcast();
         console2.log("StandbyQueue (Base Sepolia):", address(queue));
-    }
-}
-
-/// @notice Step 3, on Reactive Lasna.
-contract BindQueue is Script {
-    function run() external {
-        StandbyWatcher watcher = StandbyWatcher(payable(vm.envAddress("WATCHER")));
-        address queue = vm.envAddress("QUEUE");
-        vm.startBroadcast();
-        watcher.setQueue(queue);
-        vm.stopBroadcast();
-        console2.log("Watcher bound to queue:", queue);
     }
 }
 

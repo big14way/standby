@@ -6,8 +6,8 @@ When a Morpho Blue market is fully borrowed, lenders cannot withdraw. Liquidity 
 repays, someone supplies, or a position is liquidated, and it goes to whoever withdraws first. Standby lets a
 lender queue once and be paid the moment liquidity returns, in order of arrival, with nothing of theirs running.
 
-Built for the Reactive Omni Buildathon, track *Every Second Counts*. Work in progress: the contracts and
-their tests are here; testnet deployment, measured latency and a demo follow.
+Built for the Reactive Omni Buildathon, track *Every Second Counts*. Work in progress: the contracts are
+deployed on testnet and the first loops have run; a full latency study and a demo follow.
 
 ## How it works
 
@@ -23,6 +23,34 @@ their tests are here; testnet deployment, measured latency and a demo follow.
 
 Each callback carries the block of the event that caused it, so the queue records the full-loop latency of
 every settlement on-chain (`lagHistogram()`).
+
+## Deployed (testnet)
+
+| Contract | Chain | Address |
+|---|---|---|
+| `StandbyWatcher` | Reactive Lasna (5318007) | [`0x9F0c2ca01276d9d7AA064b876bcf2b0b9880E9bc`](https://lasna.reactscan.net/address/0x9F0c2ca01276d9d7AA064b876bcf2b0b9880E9bc) |
+| `StandbyQueue` | Base Sepolia (84532) | [`0xC0BAA9aFe6C810b584D52e6b1EE5a849CA538642`](https://sepolia.basescan.org/address/0xC0BAA9aFe6C810b584D52e6b1EE5a849CA538642) |
+| Morpho Blue (not ours) | Base Sepolia | `0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb` |
+
+The demo market is our own market on the real Morpho Blue: test tokens sbUSD
+(`0xa600E633cDbBe3003D6626e1b37dB0dbE0AaaF49`) and sbETH (`0x039217f10c00642A52144eB4a8dd24972e246F72`), an oracle
+we set (`0xFb6931BD12e428191b193211002D190C49470e5f`), Morpho's AdaptiveCurveIrm and an 86% LLTV. Market id
+`0x321754d492bcd755a8b2be25eb2662875a132880158d8975b21e823853bd237a`.
+
+### The first loop
+
+The market was fully borrowed and one lender was queued for 30,000 sbUSD. A borrower repaid 10,000.
+
+| Step | Chain | Block | Transaction |
+|---|---|---|---|
+| Repayment (the origin event) | Base Sepolia | 60,836,197 | [`0x831927d2…b449e6`](https://sepolia.basescan.org/tx/0x831927d241adec2e0238eafafe303908bd8061eddd5e9ec52231438e54b449e6) |
+| Watcher reacts, requests the callback | Reactive Lasna | 8,731,321 | [`0x1aa61dbf…0d5fb1`](https://lasna.reactscan.net/tx/0x1aa61dbf8753adaf6bc1d2a620b66ed3ded5ea1c859747a3c9b0d2883a0d5fb1) |
+| Queue settles, pays the lender 10,000 | Base Sepolia | 60,836,206 | [`0xb82b7cb2…4d306c`](https://sepolia.basescan.org/tx/0xb82b7cb2c8fb96ff5bc2744d718bcdc3e6b98a9219da1d7533f21d240d4d306c) |
+
+Nine Base Sepolia blocks from repayment to payout. At 0.2 s a block that is 1.8 s. This is one loop, not a
+statistic; the measured distribution comes next. Base Sepolia's block timestamps are whole seconds, so latency
+here is counted in blocks, and the queue records it itself: the `Loop` event of the settlement carries the
+origin block and the origin transaction hash.
 
 ## Layout
 
