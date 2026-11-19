@@ -32,6 +32,10 @@ every settlement on-chain (`lagHistogram()`).
 | `StandbyQueue` | Base Sepolia (84532) | [`0xC0BAA9aFe6C810b584D52e6b1EE5a849CA538642`](https://sepolia.basescan.org/address/0xC0BAA9aFe6C810b584D52e6b1EE5a849CA538642) |
 | Morpho Blue (not ours) | Base Sepolia | `0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb` |
 
+Both contracts are source-verified on Sourcify (exact match):
+[watcher](https://repo.sourcify.dev/5318007/0x9F0c2ca01276d9d7AA064b876bcf2b0b9880E9bc),
+[queue](https://repo.sourcify.dev/84532/0xC0BAA9aFe6C810b584D52e6b1EE5a849CA538642).
+
 The demo market is our own market on the real Morpho Blue: test tokens sbUSD
 (`0xa600E633cDbBe3003D6626e1b37dB0dbE0AaaF49`) and sbETH (`0x039217f10c00642A52144eB4a8dd24972e246F72`), an oracle
 we set (`0xFb6931BD12e428191b193211002D190C49470e5f`), Morpho's AdaptiveCurveIrm and an 86% LLTV. Market id
