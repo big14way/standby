@@ -21,6 +21,7 @@ import argparse
 import json
 import os
 import random
+import signal
 import sys
 import time
 
@@ -47,6 +48,20 @@ from common import (
 )
 
 WAIT_FOR_SETTLEMENT_S = 120
+
+# Morpho Blue's Repay and Supply events.
+ORIGIN_TOPICS = (
+    "0x52acb05cebbd3cd39715469f22afbf5a17496295ef3bc9bb5944056c63ccaa09",
+    "0xedf8870433c83823eb071d3df1caa8d008f12f6440918c20d75a3602cda30fe0",
+)
+
+# Set by SIGTERM / SIGINT: finish and record the loop in flight, then stop.
+stopping = False
+
+
+def _stop(*_):
+    global stopping
+    stopping = True
 
 
 def send_origin(cause, assets):
@@ -103,15 +118,67 @@ def find_request(origin_tx, lasna_from):
     return None
 
 
+def build_record(n, cause, assets, origin_tx, origin_block, lasna_from):
+    """Follow one origin transaction through Lasna to its settlement and return the record."""
+    rec = {
+        "n": n,
+        "cause": cause,
+        "assets": str(assets),
+        "origin": {"tx": origin_tx, "block": origin_block, "timestampMs": base_block_ms(origin_block)},
+        "reactive": None,
+        "settlement": None,
+    }
+
+    log, w = find_loop(origin_tx, origin_block)
+    if log is not None:
+        settle_block = int(log["blockNumber"], 16)
+        sr = receipt(BASE_RPC, log["transactionHash"])
+        rec["settlement"] = {
+            "tx": log["transactionHash"],
+            "block": settle_block,
+            "timestampMs": base_block_ms(settle_block),
+            "gasUsed": int(sr["gasUsed"], 16),
+            "assetsPaid": str(w[3]),
+            "tickets": w[4],
+        }
+        rec["lagBlocks"] = settle_block - origin_block
+
+    req = find_request(origin_tx, lasna_from)
+    if req is not None:
+        lasna_block = int(req["blockNumber"], 16)
+        rec["reactive"] = {
+            "tx": req["transactionHash"],
+            "block": lasna_block,
+            "timestamp": lasna_block_s(lasna_block),
+        }
+    return rec
+
+
+def report(rec):
+    n, cause, assets = rec["n"], rec["cause"], int(rec["assets"])
+    if rec["settlement"]:
+        ms = rec["settlement"]["timestampMs"] - rec["origin"]["timestampMs"]
+        paid = int(rec["settlement"]["assetsPaid"]) / WAD
+        print(f"{n}: {cause} {assets // WAD} -> paid {paid:g} after {rec['lagBlocks']} blocks ({ms} ms)", flush=True)
+    else:
+        print(f"{n}: {cause} {assets // WAD} -> NO SETTLEMENT within {WAIT_FOR_SETTLEMENT_S}s ({rec['origin']['tx']})", flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--loops", type=int, required=True)
+    ap.add_argument("--loops", type=int, default=0)
     ap.add_argument("--cause", choices=["repay", "supply"], default="repay")
     ap.add_argument("--out", default="data/loops.jsonl")
     ap.add_argument("--min", type=int, default=50, help="smallest amount, whole loan tokens")
     ap.add_argument("--max", type=int, default=500, help="largest amount, whole loan tokens")
     ap.add_argument("--pause-min", type=float, default=0.3)
     ap.add_argument("--pause-max", type=float, default=3.0)
+    ap.add_argument(
+        "--recover",
+        metavar="TX",
+        help="write the record for an origin transaction that was sent but not recorded (an interrupted run)",
+    )
+    ap.add_argument("--lasna-from", type=int, help="with --recover: Lasna block to search from")
     a = ap.parse_args()
 
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
@@ -120,7 +187,25 @@ def main():
         with open(a.out) as f:
             done = sum(1 for line in f if line.strip())
 
+    if a.recover:
+        o = receipt(BASE_RPC, a.recover)
+        # Morpho's Repay and Supply events both carry (assets, shares) as data.
+        ev = [l for l in o["logs"] if l["address"].lower() == MORPHO.lower() and l["topics"][0] in ORIGIN_TOPICS]
+        rec = build_record(
+            done + 1, a.cause, words(ev[0]["data"])[0], a.recover, int(o["blockNumber"], 16), a.lasna_from
+        )
+        with open(a.out, "a") as f:
+            f.write(json.dumps(rec) + "\n")
+        report(rec)
+        return
+
+    signal.signal(signal.SIGTERM, _stop)
+    signal.signal(signal.SIGINT, _stop)
+
     for i in range(a.loops):
+        if stopping:
+            print("stopped on request", flush=True)
+            return 1
         n = done + i + 1
         assets = random.randint(a.min, a.max) * WAD
         lasna_from = block_number(LASNA_RPC) - 2
@@ -132,47 +217,10 @@ def main():
             print(f"{n}: origin transaction reverted {origin_tx}", flush=True)
             continue
 
-        rec = {
-            "n": n,
-            "cause": a.cause,
-            "assets": str(assets),
-            "origin": {"tx": origin_tx, "block": origin_block, "timestampMs": base_block_ms(origin_block)},
-            "reactive": None,
-            "settlement": None,
-        }
-
-        log, w = find_loop(origin_tx, origin_block)
-        if log is not None:
-            settle_block = int(log["blockNumber"], 16)
-            sr = receipt(BASE_RPC, log["transactionHash"])
-            rec["settlement"] = {
-                "tx": log["transactionHash"],
-                "block": settle_block,
-                "timestampMs": base_block_ms(settle_block),
-                "gasUsed": int(sr["gasUsed"], 16),
-                "assetsPaid": str(w[3]),
-                "tickets": w[4],
-            }
-            rec["lagBlocks"] = settle_block - origin_block
-
-        req = find_request(origin_tx, lasna_from)
-        if req is not None:
-            lasna_block = int(req["blockNumber"], 16)
-            rec["reactive"] = {
-                "tx": req["transactionHash"],
-                "block": lasna_block,
-                "timestamp": lasna_block_s(lasna_block),
-            }
-
+        rec = build_record(n, a.cause, assets, origin_tx, origin_block, lasna_from)
         with open(a.out, "a") as f:
             f.write(json.dumps(rec) + "\n")
-
-        if rec["settlement"]:
-            ms = rec["settlement"]["timestampMs"] - rec["origin"]["timestampMs"]
-            paid = int(rec["settlement"]["assetsPaid"]) / WAD
-            print(f"{n}: {a.cause} {assets // WAD} -> paid {paid:g} after {rec['lagBlocks']} blocks ({ms} ms)", flush=True)
-        else:
-            print(f"{n}: {a.cause} {assets // WAD} -> NO SETTLEMENT within {WAIT_FOR_SETTLEMENT_S}s ({origin_tx})", flush=True)
+        report(rec)
 
         time.sleep(random.uniform(a.pause_min, a.pause_max))
 

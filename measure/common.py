@@ -91,8 +91,12 @@ def lasna_block_s(number):
 
 
 def cast_send(private_key, to, signature, *args, value=None, gas_limit=None, rpc_url=BASE_RPC):
-    """Sign and send with `cast`, wait for the receipt, return it as a dict."""
-    cmd = ["cast", "send", to, signature, *[str(a) for a in args], "--rpc-url", rpc_url, "--json"]
+    """Sign and send with `cast`, wait for the receipt, return it as a dict.
+
+    `cast` is asked only to submit (`--async`); the receipt is polled here several times a second, because
+    cast's own polling interval is longer than a whole loop takes.
+    """
+    cmd = ["cast", "send", to, signature, *[str(a) for a in args], "--rpc-url", rpc_url, "--async"]
     if value is not None:
         cmd += ["--value", str(value)]
     if gas_limit is not None:
@@ -101,8 +105,15 @@ def cast_send(private_key, to, signature, *args, value=None, gas_limit=None, rpc
     last = None
     for _ in range(4):
         p = subprocess.run(cmd, capture_output=True, text=True)
-        if p.returncode == 0:
-            return json.loads(p.stdout)
+        tx = p.stdout.strip().splitlines()[-1].strip() if p.returncode == 0 and p.stdout.strip() else ""
+        if tx.startswith("0x") and len(tx) == 66:
+            deadline = time.time() + 90
+            while time.time() < deadline:
+                r = receipt(rpc_url, tx)
+                if r is not None:
+                    return r
+                time.sleep(0.25)
+            raise RuntimeError(f"no receipt for {tx} after 90 s")
         last = (p.stderr or p.stdout).strip().splitlines()[-1:] or ["cast failed"]
         time.sleep(2)
     raise RuntimeError(f"cast send failed: {last[0][:300]}")
