@@ -137,8 +137,9 @@ What this shows, and what it does not:
   in arrival order, with nobody watching anything.
 - **It shows freed liquidity being lent out again instead of reaching lenders.** In 110 of the 1,103 cases the
   first taker was a new loan, not a withdrawal. In the Base USR / USDC market, stuck since March 2026 with
-  1.23M USDC supplied, four repayments or liquidations of 78 to 2,220 USDC arrived while it was full and
-  stayed past their own block; three of the four were first drawn on by a new borrower.
+  1.23M USDC supplied, seven repayments or liquidations of 13 to 2,220 USDC arrived while it was full (counting
+  from 10 USDC up); five of the seven were first drawn on by a new borrower, two by a withdrawing lender. The
+  quickest of the seven was touched 92 seconds later.
 - 176 inflows were taken out again inside the transaction that brought them (a supply and a withdrawal or
   loan in one call). Nothing outside that transaction could have reached them, this queue included.
 
@@ -147,6 +148,8 @@ the queue wins only if its loop is shorter than the rival's.
 
 To reproduce: `python3 history/fetch.py <chain id> <market id>` downloads a market (the five used are listed in
 `history/markets.json`, their data is in `history/data/`), `cd history && python3 report.py` prints the tables.
+The seven Base cases are listed by
+`python3 history/analyse.py history/data/8453-0xff0f2bd5.jsonl.gz --block-time 2 --since 1774137600 --min-inflow 10 --list`.
 A market's rebuilt liquidity never goes below zero in any of the five and ends at zero, as it must for a
 market that is full today.
 
