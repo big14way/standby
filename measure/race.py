@@ -10,7 +10,7 @@ Only one of them can have the X. If the rival's withdrawal lands first it succee
 settlement pays nothing; if the settlement lands first, the rival's withdrawal reverts for lack of liquidity.
 
 Both transactions are signed before the trial starts (`cast mktx`, no network) and submitted as raw
-transactions, so the delay between them is the script's sleep plus network jitter. The result is not binned
+transactions, from two threads, so the delay between them is the script's sleep plus network jitter. The result is not binned
 by the requested delay but by where the rival's transaction actually landed: rival block minus origin block.
 
 Needs BORROWER_PRIVATE_KEY / BORROWER_ADDRESS and RIVAL_PRIVATE_KEY / RIVAL_ADDRESS.
@@ -25,6 +25,7 @@ import random
 import signal
 import subprocess
 import sys
+import threading
 import time
 
 from common import BASE_RPC, LASNA_RPC, MARKET_PARAMS, MORPHO, MP_TYPE, WAD, block_number, receipt, rpc
@@ -107,12 +108,29 @@ def main():
         )
         lasna_from = block_number(LASNA_RPC) - 2
 
-        try:
-            origin_tx = rpc(BASE_RPC, "eth_sendRawTransaction", [raw_repay], tries=1)
-            time.sleep(delay)
-            rival_tx = rpc(BASE_RPC, "eth_sendRawTransaction", [raw_withdraw], tries=1)
-        except Exception as e:  # noqa: BLE001 - a failed submission voids the trial, nothing more
-            print(f"{n}: submission failed, trial skipped ({str(e)[:120]})", flush=True)
+        # Submit from two threads so the gap between the submissions is the chosen delay, not the delay plus
+        # the time the first HTTP call takes. A negative delay submits the rival's transaction first.
+        sent = {}
+
+        def submit(name, raw):
+            try:
+                sent[name] = rpc(BASE_RPC, "eth_sendRawTransaction", [raw], tries=1)
+            except Exception as e:  # noqa: BLE001 - a failed submission voids the trial, nothing more
+                sent[name] = e
+
+        first, second = ("origin", raw_repay), ("rival", raw_withdraw)
+        if delay < 0:
+            first, second = second, first
+        t1 = threading.Thread(target=submit, args=first)
+        t2 = threading.Thread(target=submit, args=second)
+        t1.start()
+        time.sleep(abs(delay))
+        t2.start()
+        t1.join()
+        t2.join()
+        origin_tx, rival_tx = sent["origin"], sent["rival"]
+        if isinstance(origin_tx, Exception) or isinstance(rival_tx, Exception):
+            print(f"{n}: submission failed, trial skipped ({str(origin_tx)[:80]} / {str(rival_tx)[:80]})", flush=True)
             time.sleep(5)
             continue
 
