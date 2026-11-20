@@ -87,6 +87,34 @@ contract QueueTest is BaseTest {
         assertEq(queue.ticketOf(id, alice), 0);
     }
 
+    function test_join_withTooLittleGasToPay_revertsRatherThanSkippingThePayment() public {
+        // A wallet's gas estimate is the least gas at which the call does not revert. If a join that is short
+        // of gas simply skipped the payment, that estimate would land on the skipping path and a liquid
+        // market would never pay on the spot. So it reverts, and the estimate lands on the paying path.
+        vm.deal(alice, 2 * JOIN_FEE);
+        vm.startPrank(alice);
+        morpho.setAuthorization(address(queue), true);
+        vm.expectRevert(StandbyQueue.NotEnoughGas.selector);
+        queue.join{value: JOIN_FEE, gas: 300_000}(id, 25_000e18);
+
+        // With room for the payment it goes through and pays.
+        queue.join{value: JOIN_FEE, gas: 600_000}(id, 25_000e18);
+        vm.stopPrank();
+        assertEq(usd.balanceOf(alice), 25_000e18);
+        assertEq(queue.openTickets(id), 0);
+    }
+
+    function test_join_onAFullyBorrowedMarket_needsNoGasForAPayment() public {
+        // Nothing to pay, so the gas guard does not apply and a modest gas limit is enough.
+        _borrowAll();
+        vm.deal(alice, JOIN_FEE);
+        vm.startPrank(alice);
+        morpho.setAuthorization(address(queue), true);
+        queue.join{value: JOIN_FEE, gas: 300_000}(id, 25_000e18);
+        vm.stopPrank();
+        assertEq(queue.openTickets(id), 1);
+    }
+
     function test_join_feeStaysInTheQueueToPayForCallbacks() public {
         _borrowAll();
         uint256 before = address(queue).balance;

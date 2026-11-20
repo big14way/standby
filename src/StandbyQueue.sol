@@ -37,6 +37,8 @@ contract StandbyQueue is AbstractCallback {
     error NothingSupplied();
     error NotQueued();
     error Reentered();
+    /// @notice `join` on a market that can pay now needs gas for the payment. Send more.
+    error NotEnoughGas();
 
     /// @notice A lender joined the queue.
     event Joined(Id indexed id, address indexed owner, uint256 ticket, uint256 assets);
@@ -142,7 +144,9 @@ contract StandbyQueue is AbstractCallback {
         openTickets[id] += 1;
         emit Joined(id, msg.sender, ticket, assets);
 
-        (,, bool more) = _settle(id, mp);
+        // Strict: a join sent with too little gas to pay reverts instead of quietly skipping the payment,
+        // so a wallet's gas estimate lands on the amount that lets a liquid market pay in this transaction.
+        (,, bool more) = _settle(id, mp, true);
         emit QueueState(id, pendingAssets[id], openTickets[id], more);
     }
 
@@ -172,7 +176,7 @@ contract StandbyQueue is AbstractCallback {
         onlyCallbackSender(reactive_)
         nonReentrant
     {
-        (uint256 paid, uint256 served, bool more) = _settle(id, MORPHO.idToMarketParams(id));
+        (uint256 paid, uint256 served, bool more) = _settle(id, MORPHO.idToMarketParams(id), false);
 
         loops += 1;
         if (paid != 0) loopsThatPaid += 1;
@@ -219,7 +223,11 @@ contract StandbyQueue is AbstractCallback {
 
     /// @dev Walks the queue from its head and withdraws for each open ticket until liquidity, tickets or the
     ///      per-call limits run out. A ticket that cannot be paid is voided so it cannot block the ones behind.
-    function _settle(Id id, MarketParams memory mp) internal returns (uint256 paid, uint256 served, bool more) {
+    ///      `strict` is set by `join`: there, running short of gas reverts. In a callback it stops the walk.
+    function _settle(Id id, MarketParams memory mp, bool strict)
+        internal
+        returns (uint256 paid, uint256 served, bool more)
+    {
         if (openTickets[id] == 0) return (0, 0, false);
 
         MORPHO.accrueInterest(mp);
@@ -234,7 +242,10 @@ contract StandbyQueue is AbstractCallback {
         while (h < end && liquid != 0 && served < MAX_SERVED_PER_CALL && steps < MAX_STEPS_PER_CALL) {
             // A withdrawal that runs out of gas would look like a failed one and void the ticket. Stop
             // early instead; `more` then asks for another call.
-            if (gasleft() < MIN_GAS_PER_TICKET) break;
+            if (gasleft() < MIN_GAS_PER_TICKET) {
+                if (strict) revert NotEnoughGas();
+                break;
+            }
             steps += 1;
             Ticket storage t = q[h];
             uint256 want = t.assets;
