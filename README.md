@@ -91,8 +91,9 @@ How this was measured, and how to check it:
   settlement both name that origin transaction, and that the blocks match. Only loops that pass are counted.
   All 220 passed. The result is [`data/summary.json`](data/summary.json).
 - Nothing is timed with a local clock. Latency is the settlement's block minus the origin's block.
-- The queue keeps the same record on-chain. `lagHistogram()` on the queue returns the distribution above,
-  count for count.
+- The queue keeps the same record on-chain. At the end of the run (Base Sepolia block 61,386,945)
+  `lagHistogram()` on the queue returned the distribution above, count for count. It keeps counting: the
+  callbacks of the race below and of anything since are in it too.
 
 One thing could not be measured. The loop has two legs, Base Sepolia to Lasna and Lasna back to Base Sepolia,
 and splitting the 1.4 s between them needs the two chains' clocks to agree. Lasna stamps its blocks in whole
@@ -152,6 +153,61 @@ The seven Base cases are listed by
 `python3 history/analyse.py history/data/8453-0xff0f2bd5.jsonl.gz --block-time 2 --since 1774137600 --min-inflow 10 --list`.
 A market's rebuilt liquidity never goes below zero in any of the five and ends at zero, as it must for a
 market that is full today.
+
+## The race: what a second buys
+
+History has no rival fast enough to test the queue, so one was built. A second lender in the same market, not
+in the queue, withdraws by hand: in each trial the borrower repays 100 sbUSD and, a chosen time later, the
+rival sends `withdraw(100)` straight to Morpho. Only one of them can have the 100. Both transactions are
+signed beforehand and pay the same fee. The result is binned by where the rival's transaction actually landed.
+
+120 trials. In 6 the rival landed before the repayment and no race took place. The other 114:
+
+| Rival's withdrawal landed | Races | Queue paid its lender first | Rival took it |
+|---|---|---|---|
+| in the same block, or up to 4 blocks later (up to 0.8 s) | 36 | 0 | 36 |
+| 5 to 9 blocks later (1.0 to 1.8 s) | 37 | 19 | 18 |
+| 10 or more blocks later (2.0 s and beyond, up to 9 s) | 41 | 41 | 0 |
+
+Block by block through the contested range:
+
+| Blocks after the repayment | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|
+| Queue first / races | 0 / 7 | 2 / 9 | 3 / 7 | 2 / 6 | 4 / 6 | 8 / 9 | 12 / 12 |
+
+This is the latency distribution seen from the other side. A rival who gets a withdrawal in within 0.8 seconds
+of the repayment beats the queue every time, a rival who needs 2 seconds or more loses every time, and in
+between it is decided by which transaction lands first. When the queue lost, its callback still arrived, found
+no liquidity, paid nothing and changed nothing: those 54 settlements are on-chain and each cost the queue only
+gas. Every trial is in [`data/race.jsonl`](data/race.jsonl) with the four transaction hashes (repayment, Lasna
+reaction, settlement, rival), all read back from the chains; `python3 measure/race_stats.py data/race.jsonl`
+prints the full table.
+
+Set against the history above: of 1,103 real inflows, 7 were touched within 12 seconds. A loop of 1.4 seconds
+would have been first for all the others.
+
+## Refusals, on-chain
+
+| Case | What happened | Transaction |
+|---|---|---|
+| `settle` called directly by an ordinary account | Reverted: only the callback proxy may call it | [`0x4ef1141a…57b9da`](https://sepolia.basescan.org/tx/0x4ef1141ab73c2c1ac382b36fb45a1139435ac2848d09213fbc4753fffd57b9da) |
+| A callback asked for by another reactive contract ([`Impostor`](src/demo/Impostor.sol), [its request on Lasna](https://lasna.reactscan.net/tx/0x1f83eae43f7824c4f13659b59014789916ae1a1467902e23cb30fd5ef5c8007f)) | The proxy delivered it stamped with the impostor's address; the queue refused it and nothing changed | [`0x3cda0e42…7bafa6`](https://sepolia.basescan.org/tx/0x3cda0e42c1b364399c40a6d328ab815843e23ba62ef41f088542116e007bafa6) |
+| A callback that arrives after the liquidity is gone | Paid nothing, changed nothing (54 times in the race) | [`data/race.jsonl`](data/race.jsonl), winner `rival` |
+
+## Limits
+
+- **A withdrawal within about a second of the repayment beats the queue**, and one in the same block always
+  will. The race above shows where the line is. The queue is first against anyone slower than its own loop.
+- **A stranger can spend the queue's callback budget.** The refused callback in the table above still cost the
+  queue 5.8e-7 ETH: on the Reactive Network the contract that receives a callback pays for it, wanted or not.
+  The stranger pays for each request on Reactive. The budget is the join fees and whatever anyone sends the
+  queue; lender funds are never in the queue and cannot be reached this way.
+- **Supplying and withdrawing in one transaction** also makes the queue pay for a callback that finds nothing.
+- **A short gap when a queue forms.** The watcher subscribes to a market's Morpho events when its first lender
+  joins. Liquidity that returns before those subscriptions are live is picked up at the next event, not that one.
+- **The two legs of the loop are not timed separately** (see above).
+- **Testnet.** The market is our own, on the real Morpho Blue, with test tokens and an oracle we set. The
+  contracts have not been audited.
 
 ## Layout
 

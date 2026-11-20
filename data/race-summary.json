@@ -1,0 +1,148 @@
+{
+  "trials": 120,
+  "counted": 114,
+  "notCounted": {
+    "void": 6,
+    "unclear": 0,
+    "nobody": 0
+  },
+  "queueWins": 60,
+  "rivalWins": 54,
+  "byRivalGapBlocks": {
+    "0": {
+      "trials": 6,
+      "queue": 0,
+      "rival": 6
+    },
+    "1": {
+      "trials": 4,
+      "queue": 0,
+      "rival": 4
+    },
+    "2": {
+      "trials": 9,
+      "queue": 0,
+      "rival": 9
+    },
+    "3": {
+      "trials": 10,
+      "queue": 0,
+      "rival": 10
+    },
+    "4": {
+      "trials": 7,
+      "queue": 0,
+      "rival": 7
+    },
+    "5": {
+      "trials": 9,
+      "queue": 2,
+      "rival": 7
+    },
+    "6": {
+      "trials": 7,
+      "queue": 3,
+      "rival": 4
+    },
+    "7": {
+      "trials": 6,
+      "queue": 2,
+      "rival": 4
+    },
+    "8": {
+      "trials": 6,
+      "queue": 4,
+      "rival": 2
+    },
+    "9": {
+      "trials": 9,
+      "queue": 8,
+      "rival": 1
+    },
+    "10": {
+      "trials": 12,
+      "queue": 12,
+      "rival": 0
+    },
+    "11": {
+      "trials": 7,
+      "queue": 7,
+      "rival": 0
+    },
+    "12": {
+      "trials": 5,
+      "queue": 5,
+      "rival": 0
+    },
+    "14": {
+      "trials": 2,
+      "queue": 2,
+      "rival": 0
+    },
+    "19": {
+      "trials": 1,
+      "queue": 1,
+      "rival": 0
+    },
+    "21": {
+      "trials": 1,
+      "queue": 1,
+      "rival": 0
+    },
+    "23": {
+      "trials": 2,
+      "queue": 2,
+      "rival": 0
+    },
+    "28": {
+      "trials": 1,
+      "queue": 1,
+      "rival": 0
+    },
+    "29": {
+      "trials": 1,
+      "queue": 1,
+      "rival": 0
+    },
+    "30": {
+      "trials": 2,
+      "queue": 2,
+      "rival": 0
+    },
+    "31": {
+      "trials": 1,
+      "queue": 1,
+      "rival": 0
+    },
+    "32": {
+      "trials": 1,
+      "queue": 1,
+      "rival": 0
+    },
+    "36": {
+      "trials": 1,
+      "queue": 1,
+      "rival": 0
+    },
+    "39": {
+      "trials": 1,
+      "queue": 1,
+      "rival": 0
+    },
+    "40": {
+      "trials": 1,
+      "queue": 1,
+      "rival": 0
+    },
+    "41": {
+      "trials": 1,
+      "queue": 1,
+      "rival": 0
+    },
+    "45": {
+      "trials": 1,
+      "queue": 1,
+      "rival": 0
+    }
+  }
+}
