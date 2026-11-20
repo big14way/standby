@@ -1,0 +1,101 @@
+{
+  "loopsRecorded": 220,
+  "loopsVerified": 220,
+  "loopsNotCounted": [],
+  "checkedAgainstChain": true,
+  "queue": "0x757CD246b40A7D58c178ABb7CCEDa5Fb60BFf926",
+  "watcher": "0x9FA9c9876325Fd30f5e62D97DbC5A543dAc24414",
+  "endToEndBlocks": {
+    "n": 220,
+    "min": 4,
+    "median": 7,
+    "p90": 9,
+    "p99": 10,
+    "max": 17,
+    "mean": 7.214
+  },
+  "endToEndMs": {
+    "n": 220,
+    "min": 800,
+    "median": 1400,
+    "p90": 1800,
+    "p99": 2000,
+    "max": 3400,
+    "mean": 1442.727
+  },
+  "histogramBlocks": {
+    "4": 1,
+    "5": 48,
+    "6": 33,
+    "7": 40,
+    "8": 37,
+    "9": 48,
+    "10": 12,
+    "17": 1
+  },
+  "byCause": {
+    "repay": {
+      "n": 200,
+      "min": 4,
+      "median": 7,
+      "p90": 9,
+      "p99": 10,
+      "max": 17,
+      "mean": 7.175
+    },
+    "supply": {
+      "n": 20,
+      "min": 5,
+      "median": 8,
+      "p90": 9,
+      "p99": 10,
+      "max": 10,
+      "mean": 7.6
+    }
+  },
+  "settlementGas": {
+    "n": 220,
+    "min": 170523,
+    "median": 194306,
+    "p90": 194306,
+    "p99": 211394,
+    "max": 228506,
+    "mean": 194507.277
+  },
+  "paidInFull": 220,
+  "assetsPaid": "58773",
+  "firstOriginBlock": 61375955,
+  "lastSettlementBlock": 61386945,
+  "lasnaStampMinusOriginMs": {
+    "n": 220,
+    "min": -1800,
+    "median": -1000,
+    "p90": -200,
+    "p99": 0,
+    "max": 0,
+    "mean": -899.091
+  },
+  "settlementMinusLasnaStampMs": {
+    "n": 220,
+    "min": 1800,
+    "median": 2400,
+    "p90": 2800,
+    "p99": 2800,
+    "max": 4400,
+    "mean": 2341.818
+  },
+  "onChain": {
+    "loops": 220,
+    "loopsThatPaid": 220,
+    "lagHistogram": {
+      "4": 1,
+      "5": 48,
+      "6": 33,
+      "7": 40,
+      "8": 37,
+      "9": 48,
+      "10": 12,
+      "17": 1
+    }
+  }
+}
