@@ -15,9 +15,9 @@ API = "https://blue-api.morpho.org/graphql"
 PAGE = 1000
 
 QUERY = """
-query($ids: [String!], $chains: [Int!], $first: Int, $skip: Int) {
+query($ids: [String!], $chains: [Int!], $first: Int, $skip: Int, $since: Int) {
   marketTransactions(first: $first, skip: $skip, orderBy: Timestamp, orderDirection: Asc,
-    where: { marketUniqueKey_in: $ids, chainId_in: $chains, type_in: [Supply, Withdraw, Borrow, Repay, Liquidation] }) {
+    where: { marketUniqueKey_in: $ids, chainId_in: $chains, timestamp_gte: $since, type_in: [Supply, Withdraw, Borrow, Repay, Liquidation] }) {
     pageInfo { countTotal count }
     items {
       txHash timestamp blockNumber txIndex logIndex type
@@ -58,18 +58,33 @@ def main():
     out_path = os.path.join(os.path.dirname(__file__), "data", f"{chain}-{market[:10]}.jsonl")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
-    items, skip, total = [], 0, None
+    # The API refuses `skip` above 10,000, so page by time: each request starts at the newest timestamp seen
+    # so far, and `skip` only steps through that one window. Rows seen twice are dropped.
+    seen, items, since, skip, total = set(), [], 0, 0, None
     while True:
-        page = post({"ids": [market], "chains": [chain], "first": 1 if count_only else PAGE, "skip": skip})
-        total = page["pageInfo"]["countTotal"]
+        page = post({"ids": [market], "chains": [chain], "first": 1 if count_only else PAGE, "skip": skip, "since": since})
+        if total is None:
+            total = page["pageInfo"]["countTotal"]
         if count_only:
             print(total)
             return
-        items += page["items"]
-        skip += len(page["items"])
-        print(f"{skip} / {total}", file=sys.stderr)
-        if not page["items"] or skip >= total:
+        got = page["items"]
+        for t in got:
+            key = (t["txHash"], t["logIndex"])
+            if key not in seen:
+                seen.add(key)
+                items.append(t)
+        print(f"{len(items)} / {total}", file=sys.stderr)
+        if len(got) < PAGE:
             break
+        newest = max(int(t["timestamp"]) for t in got)
+        if newest > since:
+            since, skip = newest, 0
+        else:
+            skip += len(got)  # a whole page inside one second: step through it
+
+    if len(items) != total:
+        print(f"warning: got {len(items)} of {total}", file=sys.stderr)
 
     # The API orders by timestamp; within a block, order by position in the block.
     items.sort(key=lambda t: (int(t["blockNumber"]), t["txIndex"], t["logIndex"]))
