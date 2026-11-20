@@ -1,0 +1,42 @@
+[
+  {
+    "name": "USR / USDC",
+    "chain": "Ethereum",
+    "chainId": 1,
+    "blockTime": 12,
+    "id": "0x8e7cc042d739a365c43d0a52d5f24160fa7ae9b7e7c9a479bd02a56041d4cf77",
+    "file": "1-0x8e7cc042.jsonl.gz"
+  },
+  {
+    "name": "wstUSR / USDC",
+    "chain": "Ethereum",
+    "chainId": 1,
+    "blockTime": 12,
+    "id": "0xd9e34b1eed46d123ac1b69b224de1881dbc88798bc7b70f504920f62f58f28cc",
+    "file": "1-0xd9e34b1e.jsonl.gz"
+  },
+  {
+    "name": "sdeUSD / USDC",
+    "chain": "Ethereum",
+    "chainId": 1,
+    "blockTime": 12,
+    "id": "0x0f9563442d64ab3bd3bcb27058db0b0d4046a4c46f0acd811dacae9551d2b129",
+    "file": "1-0x0f956344.jsonl.gz"
+  },
+  {
+    "name": "deUSD / USDC",
+    "chain": "Ethereum",
+    "chainId": 1,
+    "blockTime": 12,
+    "id": "0xbd1ad3b968f5f0552dbd8cf1989a62881407c5cccf9e49fb3657c8731caf0c1f",
+    "file": "1-0xbd1ad3b9.jsonl.gz"
+  },
+  {
+    "name": "USR / USDC",
+    "chain": "Base",
+    "chainId": 8453,
+    "blockTime": 2,
+    "id": "0xff0f2bd52ca786a4f8149f96622885e880222d8bed12bbbf5950296be8d03f89",
+    "file": "8453-0xff0f2bd5.jsonl.gz"
+  }
+]

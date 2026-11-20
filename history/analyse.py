@@ -24,6 +24,7 @@ that block (it finds what is left at the end of it).
 """
 
 import argparse
+import gzip
 import json
 import math
 import sys
@@ -39,6 +40,22 @@ def amount(t):
     return int(d["assets"])
 
 
+def load(path):
+    """Read a history file written by fetch.py, plain or gzipped."""
+    opener = gzip.open if path.endswith(".gz") else open
+    with opener(path, "rt") as f:
+        return [json.loads(line) for line in f if line.strip()]
+
+
+class Options:
+    """What `analyse` needs; argparse fills the same names."""
+
+    def __init__(self, history, block_time, decimals=6, min_inflow=100, dust=1, latencies="2,9", since=0, until=0):
+        self.history, self.block_time, self.decimals = history, block_time, decimals
+        self.min_inflow, self.dust, self.latencies = min_inflow, dust, latencies
+        self.since, self.until, self.list, self.out = since, until, False, None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("history")
@@ -52,11 +69,19 @@ def main():
     ap.add_argument("--list", action="store_true", help="print every episode")
     ap.add_argument("--out")
     a = ap.parse_args()
+    summary = analyse(a)
+    if a.out:
+        with open(a.out, "w") as f:
+            json.dump(summary, f, indent=2)
+            f.write("\n")
+    print(json.dumps(summary, indent=2))
 
+
+def analyse(a):
     unit = 10**a.decimals
     dust = int(a.dust * unit)
     min_in = int(a.min_inflow * unit)
-    txs = [json.loads(line) for line in open(a.history) if line.strip()]
+    txs = load(a.history)
     for t in txs:
         t["blockNumber"] = int(t["blockNumber"])
         t["timestamp"] = int(t["timestamp"])
@@ -166,6 +191,20 @@ def main():
     never = [e for e in episodes if "firstTake" not in e]
     first_take["never (to the end of the data)"] = {"episodes": len(never), "assets": sum(e["assets"] for e in never) / unit}
 
+    # The same, in seconds, for inflows that outlived their own transaction.
+    open_eps = [e for e in episodes if "firstTake" in e and not e["firstTake"]["sameTransaction"]]
+    by_seconds = {}
+    lower = -1
+    for upper in (2, 12, 60, 600, None):
+        name = f"within {upper} s" if upper is not None else "later than 600 s"
+        hit = [
+            e
+            for e in open_eps
+            if e["firstTake"]["secondsLater"] > lower and (upper is None or e["firstTake"]["secondsLater"] <= upper)
+        ]
+        by_seconds[name] = {"episodes": len(hit), "assets": sum(e["assets"] for e in hit) / unit}
+        lower = upper if upper is not None else lower
+
     taken_by = {
         kind: sum(1 for e in episodes if e.get("firstTake", {}).get("type") == kind) for kind in OUT
     }
@@ -184,7 +223,16 @@ def main():
         "episodeAssets": total / unit,
         "byCause": {c: sum(1 for e in episodes if e["cause"] == c) for c in IN},
         "firstTakenOutAgain": first_take,
+        "firstTakenOutAgainSeconds": by_seconds,
         "firstTakenBy": taken_by,
+        "firstTakenByAmongNotAtomic": {
+            kind: sum(
+                1
+                for e in episodes
+                if e.get("firstTake", {}).get("type") == kind and not e["firstTake"]["sameTransaction"]
+            )
+            for kind in OUT
+        },
         "leftAtEndOfTheSameBlock": {
             "episodesWithAnyLeft": sum(1 for e in episodes if e["leftAtEndOfBlock"] > dust),
             "assetsShare": round(sum(e["leftAtEndOfBlock"] for e in episodes) / total, 4) if total else None,
@@ -206,11 +254,7 @@ def main():
             },
         }
 
-    if a.out:
-        with open(a.out, "w") as f:
-            json.dump(summary, f, indent=2)
-            f.write("\n")
-    print(json.dumps(summary, indent=2))
+    return summary
 
 
 if __name__ == "__main__":

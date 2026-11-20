@@ -69,19 +69,23 @@ def main():
             print(total)
             return
         got = page["items"]
+        fresh = 0
         for t in got:
             key = (t["txHash"], t["logIndex"])
             if key not in seen:
                 seen.add(key)
                 items.append(t)
+                fresh += 1
         print(f"{len(items)} / {total}", file=sys.stderr)
-        if len(got) < PAGE:
+        if len(items) >= total or not got:
             break
         newest = max(int(t["timestamp"]) for t in got)
         if newest > since:
             since, skip = newest, 0
-        else:
+        elif fresh:
             skip += len(got)  # a whole page inside one second: step through it
+        else:
+            break  # nothing new and nowhere to move to
 
     if len(items) != total:
         print(f"warning: got {len(items)} of {total}", file=sys.stderr)

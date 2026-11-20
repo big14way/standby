@@ -1,0 +1,582 @@
+[
+  {
+    "market": {
+      "name": "USR / USDC",
+      "chain": "Ethereum",
+      "chainId": 1,
+      "blockTime": 12,
+      "id": "0x8e7cc042d739a365c43d0a52d5f24160fa7ae9b7e7c9a479bd02a56041d4cf77",
+      "file": "1-0x8e7cc042.jsonl.gz"
+    },
+    "summary": {
+      "history": "1-0x8e7cc042.jsonl.gz",
+      "since": 0,
+      "until": 0,
+      "transactions": 28342,
+      "firstBlock": 21534287,
+      "lastBlock": 26301371,
+      "blockTimeSeconds": 12,
+      "rebuiltLiquidityNow": 0.0,
+      "rebuiltLiquidityLowest": 0.0,
+      "episodes": 452,
+      "episodeAssets": 126158156.158812,
+      "byCause": {
+        "Supply": 441,
+        "Repay": 9,
+        "Liquidation": 2
+      },
+      "firstTakenOutAgain": {
+        "same transaction": {
+          "episodes": 15,
+          "assets": 8436367.020991
+        },
+        "same block, later transaction": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "next block": {
+          "episodes": 6,
+          "assets": 105892.036338
+        },
+        "2 to 5 blocks later": {
+          "episodes": 16,
+          "assets": 1438166.884048
+        },
+        "6 to 30 blocks later": {
+          "episodes": 62,
+          "assets": 44400214.802737
+        },
+        "more than 30 blocks later": {
+          "episodes": 353,
+          "assets": 71777515.414698
+        },
+        "never (to the end of the data)": {
+          "episodes": 0,
+          "assets": 0.0
+        }
+      },
+      "firstTakenOutAgainSeconds": {
+        "within 2 s": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "within 12 s": {
+          "episodes": 6,
+          "assets": 105892.036338
+        },
+        "within 60 s": {
+          "episodes": 16,
+          "assets": 1438166.884048
+        },
+        "within 600 s": {
+          "episodes": 86,
+          "assets": 54930523.56259
+        },
+        "later than 600 s": {
+          "episodes": 329,
+          "assets": 61247206.654845
+        }
+      },
+      "firstTakenBy": {
+        "Withdraw": 395,
+        "Borrow": 57
+      },
+      "firstTakenByAmongNotAtomic": {
+        "Withdraw": 395,
+        "Borrow": 42
+      },
+      "leftAtEndOfTheSameBlock": {
+        "episodesWithAnyLeft": 442,
+        "assetsShare": 0.984
+      },
+      "reactor": {
+        "2 s": {
+          "landsBlocksLater": 1,
+          "firstInBlock": {
+            "episodesWithAnyLeft": 442,
+            "assetsShare": 0.984
+          },
+          "lastInBlock": {
+            "episodesWithAnyLeft": 440,
+            "assetsShare": 0.9842
+          }
+        },
+        "9 s": {
+          "landsBlocksLater": 1,
+          "firstInBlock": {
+            "episodesWithAnyLeft": 442,
+            "assetsShare": 0.984
+          },
+          "lastInBlock": {
+            "episodesWithAnyLeft": 440,
+            "assetsShare": 0.9842
+          }
+        }
+      }
+    }
+  },
+  {
+    "market": {
+      "name": "wstUSR / USDC",
+      "chain": "Ethereum",
+      "chainId": 1,
+      "blockTime": 12,
+      "id": "0xd9e34b1eed46d123ac1b69b224de1881dbc88798bc7b70f504920f62f58f28cc",
+      "file": "1-0xd9e34b1e.jsonl.gz"
+    },
+    "summary": {
+      "history": "1-0xd9e34b1e.jsonl.gz",
+      "since": 0,
+      "until": 0,
+      "transactions": 14809,
+      "firstBlock": 21534251,
+      "lastBlock": 26031528,
+      "blockTimeSeconds": 12,
+      "rebuiltLiquidityNow": 0.0,
+      "rebuiltLiquidityLowest": 0.0,
+      "episodes": 243,
+      "episodeAssets": 95035507.942228,
+      "byCause": {
+        "Supply": 231,
+        "Repay": 12,
+        "Liquidation": 0
+      },
+      "firstTakenOutAgain": {
+        "same transaction": {
+          "episodes": 56,
+          "assets": 5120699.987617
+        },
+        "same block, later transaction": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "next block": {
+          "episodes": 1,
+          "assets": 366322.734581
+        },
+        "2 to 5 blocks later": {
+          "episodes": 3,
+          "assets": 8117746.298836
+        },
+        "6 to 30 blocks later": {
+          "episodes": 22,
+          "assets": 14680101.104461
+        },
+        "more than 30 blocks later": {
+          "episodes": 161,
+          "assets": 66750637.816733
+        },
+        "never (to the end of the data)": {
+          "episodes": 0,
+          "assets": 0.0
+        }
+      },
+      "firstTakenOutAgainSeconds": {
+        "within 2 s": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "within 12 s": {
+          "episodes": 1,
+          "assets": 366322.734581
+        },
+        "within 60 s": {
+          "episodes": 3,
+          "assets": 8117746.298836
+        },
+        "within 600 s": {
+          "episodes": 29,
+          "assets": 17339717.292866
+        },
+        "later than 600 s": {
+          "episodes": 154,
+          "assets": 64091021.628328
+        }
+      },
+      "firstTakenBy": {
+        "Withdraw": 166,
+        "Borrow": 77
+      },
+      "firstTakenByAmongNotAtomic": {
+        "Withdraw": 164,
+        "Borrow": 23
+      },
+      "leftAtEndOfTheSameBlock": {
+        "episodesWithAnyLeft": 193,
+        "assetsShare": 0.9558
+      },
+      "reactor": {
+        "2 s": {
+          "landsBlocksLater": 1,
+          "firstInBlock": {
+            "episodesWithAnyLeft": 193,
+            "assetsShare": 0.9558
+          },
+          "lastInBlock": {
+            "episodesWithAnyLeft": 193,
+            "assetsShare": 0.9536
+          }
+        },
+        "9 s": {
+          "landsBlocksLater": 1,
+          "firstInBlock": {
+            "episodesWithAnyLeft": 193,
+            "assetsShare": 0.9558
+          },
+          "lastInBlock": {
+            "episodesWithAnyLeft": 193,
+            "assetsShare": 0.9536
+          }
+        }
+      }
+    }
+  },
+  {
+    "market": {
+      "name": "sdeUSD / USDC",
+      "chain": "Ethereum",
+      "chainId": 1,
+      "blockTime": 12,
+      "id": "0x0f9563442d64ab3bd3bcb27058db0b0d4046a4c46f0acd811dacae9551d2b129",
+      "file": "1-0x0f956344.jsonl.gz"
+    },
+    "summary": {
+      "history": "1-0x0f956344.jsonl.gz",
+      "since": 0,
+      "until": 0,
+      "transactions": 17954,
+      "firstBlock": 21782725,
+      "lastBlock": 26298334,
+      "blockTimeSeconds": 12,
+      "rebuiltLiquidityNow": 0.0,
+      "rebuiltLiquidityLowest": 0.0,
+      "episodes": 249,
+      "episodeAssets": 307297383.046106,
+      "byCause": {
+        "Supply": 248,
+        "Repay": 1,
+        "Liquidation": 0
+      },
+      "firstTakenOutAgain": {
+        "same transaction": {
+          "episodes": 7,
+          "assets": 585425.734571
+        },
+        "same block, later transaction": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "next block": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "2 to 5 blocks later": {
+          "episodes": 7,
+          "assets": 9122103.527898
+        },
+        "6 to 30 blocks later": {
+          "episodes": 32,
+          "assets": 46484717.572101
+        },
+        "more than 30 blocks later": {
+          "episodes": 203,
+          "assets": 251105136.211536
+        },
+        "never (to the end of the data)": {
+          "episodes": 0,
+          "assets": 0.0
+        }
+      },
+      "firstTakenOutAgainSeconds": {
+        "within 2 s": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "within 12 s": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "within 60 s": {
+          "episodes": 7,
+          "assets": 9122103.527898
+        },
+        "within 600 s": {
+          "episodes": 55,
+          "assets": 88759263.340203
+        },
+        "later than 600 s": {
+          "episodes": 180,
+          "assets": 208830590.443434
+        }
+      },
+      "firstTakenBy": {
+        "Withdraw": 242,
+        "Borrow": 7
+      },
+      "firstTakenByAmongNotAtomic": {
+        "Withdraw": 237,
+        "Borrow": 5
+      },
+      "leftAtEndOfTheSameBlock": {
+        "episodesWithAnyLeft": 245,
+        "assetsShare": 0.9982
+      },
+      "reactor": {
+        "2 s": {
+          "landsBlocksLater": 1,
+          "firstInBlock": {
+            "episodesWithAnyLeft": 245,
+            "assetsShare": 0.9982
+          },
+          "lastInBlock": {
+            "episodesWithAnyLeft": 245,
+            "assetsShare": 0.9982
+          }
+        },
+        "9 s": {
+          "landsBlocksLater": 1,
+          "firstInBlock": {
+            "episodesWithAnyLeft": 245,
+            "assetsShare": 0.9982
+          },
+          "lastInBlock": {
+            "episodesWithAnyLeft": 245,
+            "assetsShare": 0.9982
+          }
+        }
+      }
+    }
+  },
+  {
+    "market": {
+      "name": "deUSD / USDC",
+      "chain": "Ethereum",
+      "chainId": 1,
+      "blockTime": 12,
+      "id": "0xbd1ad3b968f5f0552dbd8cf1989a62881407c5cccf9e49fb3657c8731caf0c1f",
+      "file": "1-0xbd1ad3b9.jsonl.gz"
+    },
+    "summary": {
+      "history": "1-0xbd1ad3b9.jsonl.gz",
+      "since": 0,
+      "until": 0,
+      "transactions": 1019,
+      "firstBlock": 20712259,
+      "lastBlock": 26347788,
+      "blockTimeSeconds": 12,
+      "rebuiltLiquidityNow": 0.0,
+      "rebuiltLiquidityLowest": 0.0,
+      "episodes": 22,
+      "episodeAssets": 596941.778555,
+      "byCause": {
+        "Supply": 19,
+        "Repay": 3,
+        "Liquidation": 0
+      },
+      "firstTakenOutAgain": {
+        "same transaction": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "same block, later transaction": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "next block": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "2 to 5 blocks later": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "6 to 30 blocks later": {
+          "episodes": 2,
+          "assets": 166883.796658
+        },
+        "more than 30 blocks later": {
+          "episodes": 20,
+          "assets": 430057.981897
+        },
+        "never (to the end of the data)": {
+          "episodes": 0,
+          "assets": 0.0
+        }
+      },
+      "firstTakenOutAgainSeconds": {
+        "within 2 s": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "within 12 s": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "within 60 s": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "within 600 s": {
+          "episodes": 3,
+          "assets": 274101.115534
+        },
+        "later than 600 s": {
+          "episodes": 19,
+          "assets": 322840.663021
+        }
+      },
+      "firstTakenBy": {
+        "Withdraw": 18,
+        "Borrow": 4
+      },
+      "firstTakenByAmongNotAtomic": {
+        "Withdraw": 18,
+        "Borrow": 4
+      },
+      "leftAtEndOfTheSameBlock": {
+        "episodesWithAnyLeft": 22,
+        "assetsShare": 1.0
+      },
+      "reactor": {
+        "2 s": {
+          "landsBlocksLater": 1,
+          "firstInBlock": {
+            "episodesWithAnyLeft": 22,
+            "assetsShare": 1.0
+          },
+          "lastInBlock": {
+            "episodesWithAnyLeft": 22,
+            "assetsShare": 1.0
+          }
+        },
+        "9 s": {
+          "landsBlocksLater": 1,
+          "firstInBlock": {
+            "episodesWithAnyLeft": 22,
+            "assetsShare": 1.0
+          },
+          "lastInBlock": {
+            "episodesWithAnyLeft": 22,
+            "assetsShare": 1.0
+          }
+        }
+      }
+    }
+  },
+  {
+    "market": {
+      "name": "USR / USDC",
+      "chain": "Base",
+      "chainId": 8453,
+      "blockTime": 2,
+      "id": "0xff0f2bd52ca786a4f8149f96622885e880222d8bed12bbbf5950296be8d03f89",
+      "file": "8453-0xff0f2bd5.jsonl.gz"
+    },
+    "summary": {
+      "history": "8453-0xff0f2bd5.jsonl.gz",
+      "since": 0,
+      "until": 0,
+      "transactions": 7479,
+      "firstBlock": 26691046,
+      "lastBlock": 59535550,
+      "blockTimeSeconds": 2,
+      "rebuiltLiquidityNow": 0.077081,
+      "rebuiltLiquidityLowest": 0.0,
+      "episodes": 313,
+      "episodeAssets": 28539178.803763,
+      "byCause": {
+        "Supply": 296,
+        "Repay": 15,
+        "Liquidation": 2
+      },
+      "firstTakenOutAgain": {
+        "same transaction": {
+          "episodes": 98,
+          "assets": 15970957.029802
+        },
+        "same block, later transaction": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "next block": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "2 to 5 blocks later": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "6 to 30 blocks later": {
+          "episodes": 3,
+          "assets": 61511.705492
+        },
+        "more than 30 blocks later": {
+          "episodes": 212,
+          "assets": 12506710.068469
+        },
+        "never (to the end of the data)": {
+          "episodes": 0,
+          "assets": 0.0
+        }
+      },
+      "firstTakenOutAgainSeconds": {
+        "within 2 s": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "within 12 s": {
+          "episodes": 0,
+          "assets": 0.0
+        },
+        "within 60 s": {
+          "episodes": 3,
+          "assets": 61511.705492
+        },
+        "within 600 s": {
+          "episodes": 50,
+          "assets": 3207619.575573
+        },
+        "later than 600 s": {
+          "episodes": 162,
+          "assets": 9299090.492896
+        }
+      },
+      "firstTakenBy": {
+        "Withdraw": 179,
+        "Borrow": 134
+      },
+      "firstTakenByAmongNotAtomic": {
+        "Withdraw": 179,
+        "Borrow": 36
+      },
+      "leftAtEndOfTheSameBlock": {
+        "episodesWithAnyLeft": 240,
+        "assetsShare": 0.7832
+      },
+      "reactor": {
+        "2 s": {
+          "landsBlocksLater": 1,
+          "firstInBlock": {
+            "episodesWithAnyLeft": 240,
+            "assetsShare": 0.7832
+          },
+          "lastInBlock": {
+            "episodesWithAnyLeft": 242,
+            "assetsShare": 0.7833
+          }
+        },
+        "9 s": {
+          "landsBlocksLater": 5,
+          "firstInBlock": {
+            "episodesWithAnyLeft": 242,
+            "assetsShare": 0.7833
+          },
+          "lastInBlock": {
+            "episodesWithAnyLeft": 242,
+            "assetsShare": 0.7833
+          }
+        }
+      }
+    }
+  }
+]
