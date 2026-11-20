@@ -67,10 +67,10 @@ when it is sent too little gas to pay.
 |---|---|
 | `src/StandbyQueue.sol` | The queue and callback contract, on the market's chain |
 | `src/StandbyWatcher.sol` | The reactive contract, on Reactive Lasna |
-| `src/demo/` | A mintable token and a settable oracle for the testnet demo market |
+| `src/demo/` | A mintable token and a settable oracle for the testnet demo market, and `TryIt`, one public call that runs a loop |
 | `script/Deploy.s.sol` | Deployment, in the order the two contracts need |
 | `measure/` | The harness that runs loops on testnet and records the three transactions of each |
-| `test/` | 40 Foundry tests, run against the Morpho Blue bytecode deployed on Base Sepolia |
+| `test/` | 42 Foundry tests, run against the Morpho Blue bytecode deployed on Base Sepolia |
 
 ## Build and test
 
