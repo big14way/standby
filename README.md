@@ -30,16 +30,35 @@ every settlement on-chain (`lagHistogram()`).
 |---|---|---|
 | `StandbyWatcher` | Reactive Lasna (5318007) | [`0x9FA9c9876325Fd30f5e62D97DbC5A543dAc24414`](https://lasna.reactscan.net/address/0x9FA9c9876325Fd30f5e62D97DbC5A543dAc24414) |
 | `StandbyQueue` | Base Sepolia (84532) | [`0x757CD246b40A7D58c178ABb7CCEDa5Fb60BFf926`](https://sepolia.basescan.org/address/0x757CD246b40A7D58c178ABb7CCEDa5Fb60BFf926) |
+| `TryIt` | Base Sepolia (84532) | [`0x7Bb5EC188C91e91feC5d430944d551Ce8C6b8ffE`](https://sepolia.basescan.org/address/0x7Bb5EC188C91e91feC5d430944d551Ce8C6b8ffE) |
 | Morpho Blue (not ours) | Base Sepolia | `0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb` |
 
-Both contracts are source-verified on Sourcify (exact match):
+All three are source-verified on Sourcify (exact match):
 [watcher](https://repo.sourcify.dev/5318007/0x9FA9c9876325Fd30f5e62D97DbC5A543dAc24414),
-[queue](https://repo.sourcify.dev/84532/0x757CD246b40A7D58c178ABb7CCEDa5Fb60BFf926).
+[queue](https://repo.sourcify.dev/84532/0x757CD246b40A7D58c178ABb7CCEDa5Fb60BFf926),
+[TryIt](https://repo.sourcify.dev/84532/0x7Bb5EC188C91e91feC5d430944d551Ce8C6b8ffE).
 
 The demo market is our own market on the real Morpho Blue: test tokens sbUSD
 (`0xa600E633cDbBe3003D6626e1b37dB0dbE0AaaF49`) and sbETH (`0x039217f10c00642A52144eB4a8dd24972e246F72`), an oracle
 we set (`0xFb6931BD12e428191b193211002D190C49470e5f`), Morpho's AdaptiveCurveIrm and an 86% LLTV. Market id
 `0x321754d492bcd755a8b2be25eb2662875a132880158d8975b21e823853bd237a`.
+
+### Try it
+
+Anyone can run a loop. Call `tryIt()` on the `TryIt` contract with any Base Sepolia account. It mints 100 test
+dollars and repays that much of the demo borrower's debt, and does nothing else. A second or two later the
+queue pays the lender at the front, in a transaction you did not send. `outcome(n)` on the same contract then
+shows one callback delivered and 100 paid since your call, and the queue's `Loop` event carries your
+transaction's hash.
+
+```bash
+cast send 0x7Bb5EC188C91e91feC5d430944d551Ce8C6b8ffE "tryIt()" --rpc-url https://sepolia.base.org --private-key $KEY
+cast call 0x7Bb5EC188C91e91feC5d430944d551Ce8C6b8ffE "outcome(uint256)(uint256,uint256,uint256)" 0 --rpc-url https://sepolia.base.org
+```
+
+The first call was made by an account that is neither the lender nor the borrower:
+[`0xc9ae43de…f08d3a`](https://sepolia.basescan.org/tx/0xc9ae43de8538416b903ab21352d10ec3a6556a04aef6afd9117618d9a9f08d3a).
+It works while the demo lender still has a ticket open and the queue has callback budget left.
 
 ### One loop
 
@@ -192,6 +211,7 @@ would have been first for all the others.
 |---|---|---|
 | `settle` called directly by an ordinary account | Reverted: only the callback proxy may call it | [`0x4ef1141a…57b9da`](https://sepolia.basescan.org/tx/0x4ef1141ab73c2c1ac382b36fb45a1139435ac2848d09213fbc4753fffd57b9da) |
 | A callback asked for by another reactive contract ([`Impostor`](src/demo/Impostor.sol), [its request on Lasna](https://lasna.reactscan.net/tx/0x1f83eae43f7824c4f13659b59014789916ae1a1467902e23cb30fd5ef5c8007f)) | The proxy delivered it stamped with the impostor's address; the queue refused it and nothing changed | [`0x3cda0e42…7bafa6`](https://sepolia.basescan.org/tx/0x3cda0e42c1b364399c40a6d328ab815843e23ba62ef41f088542116e007bafa6) |
+| A lender joins, then revokes the queue's authorisation on Morpho; a repayment follows | Their ticket was voided, their position was not touched, and the lender behind them was paid in the same settlement | [`0x06c0de82…c219cb`](https://sepolia.basescan.org/tx/0x06c0de8203d717b9904eee6fad6886d3ace24e9b5ebfd07045bdaa2717c219cb) |
 | A callback that arrives after the liquidity is gone | Paid nothing, changed nothing (54 times in the race) | [`data/race.jsonl`](data/race.jsonl), winner `rival` |
 
 ## Limits
