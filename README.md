@@ -241,6 +241,7 @@ would have been first for all the others.
 | `data/` | Every measured loop, with its three transaction hashes, and the statistics |
 | `history/` | The study of five real Morpho markets: download, analysis, data |
 | `test/` | 42 Foundry tests, run against the Morpho Blue bytecode deployed on Base Sepolia |
+| `web/` | The project page. It draws its figures from `data/` and reads the queue live from Base Sepolia |
 
 ## Build and test
 
@@ -265,11 +266,23 @@ callbacks it asks for. They cover:
 - a callback short of gas never voiding a ticket, and a full callback fitting its gas limit;
 - the on-chain latency record.
 
+## The page
+
+```bash
+cd web && npm install && npm run dev
+```
+
+`npm run data` rebuilds `web/src/data.json` from `data/loops.jsonl`, `data/summary.json` and
+`data/race-summary.json`, so every figure on the page is one of the measured ones. The "Run it with a wallet"
+button sends `tryIt()` from the visitor's own wallet and then waits for the queue's `Loop` event that names
+that transaction.
+
 ## Credits
 
 - [Morpho Blue](https://github.com/morpho-org/morpho-blue) (interfaces, share maths, and the protocol itself in tests)
 - [reactive-lib-omni](https://github.com/Reactive-Network/reactive-lib-omni) (base contracts for reactive and callback contracts)
 - [forge-std](https://github.com/foundry-rs/forge-std)
+- Page: [viem](https://viem.sh), [Motion](https://motion.dev), and the typefaces Manrope, Geist and Geist Mono (SIL Open Font License)
 
 ## License
 
