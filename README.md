@@ -6,6 +6,8 @@ When a Morpho Blue market is fully borrowed, lenders cannot withdraw. Liquidity 
 repays, someone supplies, or a position is liquidated, and it goes to whoever withdraws first. Standby lets a
 lender queue once and be paid the moment liquidity returns, in order of arrival, with nothing of theirs running.
 
+**Live page: [standbyhq.vercel.app](https://standbyhq.vercel.app)**, with a button that runs a loop from your own wallet.
+
 Built for the Reactive Omni Buildathon, track *Every Second Counts*. On testnet the full loop, from the
 repayment to the lender being paid, took a median of **1.4 seconds** over 220 measured loops (p99 2.0 s).
 
