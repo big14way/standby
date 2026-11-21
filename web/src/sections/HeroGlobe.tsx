@@ -121,8 +121,12 @@ export function HeroGlobe() {
 
     const draw = (now: number) => {
       const intro = still ? 1 : ease(clamp((now - start) / 1400));
-      const fw = w / scale;
+      // On a narrow canvas the field is centred, so the middle of the drawing stays in view.
+      const shift = Math.min(0, (w / scale - FIELD) / 2);
+      const fw = w / scale - shift;
+      ctx.save();
       ctx.clearRect(0, 0, fw, FIELD);
+      ctx.translate(shift, 0);
 
       // Grid, and a cross on some of its corners.
       ctx.lineWidth = 1;
@@ -286,6 +290,7 @@ export function HeroGlobe() {
         last = key;
         setCard({ loop, phase: phase as CardState["phase"], seconds, amount });
       }
+      ctx.restore();
       if (!still) raf = requestAnimationFrame(draw);
     };
     raf = requestAnimationFrame(draw);
