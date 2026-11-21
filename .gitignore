@@ -13,3 +13,7 @@ __pycache__/
 
 # Raw market histories (the gzipped copies are committed)
 history/data/*.jsonl
+
+# Web
+web/dist/
+.vercel/

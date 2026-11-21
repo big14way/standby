@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Standby: an exit queue for fully borrowed lending markets</title>
+    <meta
+      name="description"
+      content="Queue once on a fully borrowed Morpho Blue market. When liquidity returns, the Reactive Network settles the queue and pays lenders in order. Median 1.4 s over 220 measured loops on testnet."
+    />
+    <meta property="og:title" content="Standby: exits that wait in line" />
+    <meta
+      property="og:description"
+      content="An exit queue for fully borrowed Morpho Blue markets, settled by the Reactive Network. Median 1.4 s over 220 measured loops on testnet."
+    />
+    <meta property="og:image" content="/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script>
+      try {
+        var t = localStorage.getItem("standby-theme");
+        if (t === "dark" || t === "light") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
