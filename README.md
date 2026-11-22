@@ -73,19 +73,18 @@ Standby replaces "whoever is watching" with "whoever has waited longest".
 sequenceDiagram
     autonumber
     participant L as Lender
-    participant B as Borrower
-    participant M as Morpho Blue (Base Sepolia)
-    participant Q as StandbyQueue (Base Sepolia)
-    participant W as StandbyWatcher (Reactive Lasna)
-    participant P as Callback proxy (Base Sepolia)
-    L->>M: setAuthorization(queue, true), once
+    participant M as Morpho Blue<br/>Base Sepolia
+    participant Q as StandbyQueue<br/>Base Sepolia
+    participant W as StandbyWatcher<br/>Reactive Lasna
+    participant P as Callback proxy<br/>Base Sepolia
+    L->>M: authorise the queue, once
     L->>Q: join(market, amount)
-    Q-->>W: QueueState event: a lender is waiting
-    W->>W: subscribe to this market's Repay, Supply, Liquidate
-    B->>M: repay
+    Q-->>W: QueueState event
+    Note over W: subscribes to the market's<br/>Repay, Supply, Liquidate
+    Note over M: a borrower repays
     M-->>W: Repay event
-    W->>P: callback request: settle(market, origin block, origin tx)
-    P->>Q: settle, stamped with the watcher's address
+    W->>P: request a callback
+    P->>Q: settle(market, origin block, origin tx)
     Q->>M: withdraw for the lender at the front
     M->>L: loan tokens, to the lender's own address
 ```
