@@ -159,7 +159,8 @@ What this shows, and what it does not:
   in arrival order, with nobody watching anything.
 - **It shows freed liquidity being lent out again instead of reaching lenders.** In 110 of the 1,103 cases the
   first taker was a new loan, not a withdrawal. In the Base USR / USDC market, stuck since March 2026 with
-  1.23M USDC supplied, seven repayments or liquidations of 13 to 2,220 USDC arrived while it was full (counting
+  1.23M USDC of lender deposits in it (supplies minus withdrawals; Morpho's own page shows about 100M, because
+  unpaid interest keeps accruing), seven repayments or liquidations of 13 to 2,220 USDC arrived while it was full (counting
   from 10 USDC up); five of the seven were first drawn on by a new borrower, two by a withdrawing lender. The
   quickest of the seven was touched 92 seconds later.
 - 176 inflows were taken out again inside the transaction that brought them (a supply and a withdrawal or
