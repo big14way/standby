@@ -1711,6 +1711,19 @@ button {
   align-items: center;
   gap: 8px;
 }
+.con-note {
+  margin-right: auto;
+  max-width: 330px;
+  font-size: 12px;
+  line-height: 16px;
+  color: #9c9ca6;
+}
+.con-note a {
+  color: #e4e4e7;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+  text-underline-offset: 3px;
+}
 .con-btn {
   display: inline-flex;
   align-items: center;
@@ -2313,6 +2326,13 @@ button {
   }
   .con-actions {
     padding: 16px;
+    height: auto;
+    flex-wrap: wrap;
+  }
+  .con-note {
+    flex-basis: 100%;
+    max-width: none;
+    margin-bottom: 8px;
   }
   .con-bar .caps {
     display: none;

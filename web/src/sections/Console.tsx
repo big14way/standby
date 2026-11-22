@@ -259,6 +259,15 @@ export function Console() {
               )}
             </ol>
             <div className="con-actions">
+              {tab === "try" ? (
+                <p className="con-note">
+                  MetaMask may flag this new site. Prefer a terminal? The same call is{" "}
+                  <a href={`${REPO}#try-it`} target="_blank" rel="noreferrer">
+                    in the README
+                  </a>
+                  .
+                </p>
+              ) : null}
               <button type="button" className="con-btn" onClick={() => copy("code", code)}>
                 {copied === "code" ? <Check /> : <Copy />}
                 {copied === "code" ? "Copied!" : "Copy"}
