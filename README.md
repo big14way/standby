@@ -8,6 +8,14 @@ lender queue once and be paid the moment liquidity returns, in order of arrival,
 
 **Live page: [standbyhq.vercel.app](https://standbyhq.vercel.app)**, with a button that runs a loop from your own wallet.
 
+**Demo video (2:55): [youtu.be/kmcIP80Cjw0](https://youtu.be/kmcIP80Cjw0).** The run shown in it:
+[repayment](https://sepolia.basescan.org/tx/0xcdfaf5643ee74ce00c3e58cbc0c644c63d277816bab29e077d24e1ee8e0e758a)
+in Base Sepolia block 62,183,942,
+[the watcher's reaction](https://lasna.reactscan.net/tx/0xefedfabf02599a4aa51b1bc61f6954013c23852f04f72d65c211512e645c6565)
+in Lasna block 8,981,757,
+[the lender paid](https://sepolia.basescan.org/tx/0x630d39d3950cd3f8fecd2d7997313cd0041235839c8f1b8b9b65073ace1ff5ba)
+in Base Sepolia block 62,183,949: 7 blocks, 1.4 s.
+
 Built for the Reactive Omni Buildathon, track *Every Second Counts*. On testnet the full loop, from the
 repayment to the lender being paid, took a median of **1.4 seconds** over 220 measured loops (p99 2.0 s).
 
