@@ -2,27 +2,65 @@
 
 **An exit queue for lending markets that have run dry, settled by the Reactive Network.**
 
-When a Morpho Blue market is fully borrowed, lenders cannot withdraw. Liquidity comes back when a borrower
-repays, someone supplies, or a position is liquidated, and it goes to whoever withdraws first. Standby lets a
-lender queue once and be paid the moment liquidity returns, in order of arrival, with nothing of theirs running.
+When a Morpho Blue market is fully borrowed, lenders cannot withdraw. Standby lets a lender queue once and be
+paid the moment liquidity returns, in order of arrival, with no keeper, no bot and nothing of their own running.
+A reactive contract on the Reactive Network watches the market and triggers every payout.
 
-**Live page: [standbyhq.vercel.app](https://standbyhq.vercel.app)**, with a button that runs a loop from your own wallet.
+**[Live page](https://standbyhq.vercel.app)** · **[Demo video, 2:55](https://youtu.be/kmcIP80Cjw0)** ·
+**[One full loop on-chain](#one-loop)** · **[Check it yourself](#check-it-yourself)**
 
-**Demo video (2:55): [youtu.be/kmcIP80Cjw0](https://youtu.be/kmcIP80Cjw0).** The run shown in it:
-[repayment](https://sepolia.basescan.org/tx/0xcdfaf5643ee74ce00c3e58cbc0c644c63d277816bab29e077d24e1ee8e0e758a)
+Built for the Reactive Omni Buildathon, track *Every Second Counts*.
+
+| | |
+|---|---|
+| **What it is** | A first-in, first-out exit queue for a Morpho Blue market at 100% utilisation |
+| **Chains** | Reactive Lasna (the reactive contract) and Base Sepolia (the queue and Morpho Blue) |
+| **Full-loop latency** | Median **1.4 s**, 90th percentile 1.8 s, 99th percentile 2.0 s, over 220 measured loops |
+| **Against a rival** | The queue paid first in 41 of 41 races when the rival was 2 s or more behind, and in 0 of 36 when the rival was within 0.8 s |
+| **Tests** | 42 Foundry tests against Morpho Blue's deployed bytecode. No keys, no RPC |
+| **Source** | All three contracts verified on Sourcify, exact match |
+| **Status** | Testnet. Not audited. [Limits](#limits) are listed in full |
+
+The run shown in the demo video:
+[the repayment](https://sepolia.basescan.org/tx/0xcdfaf5643ee74ce00c3e58cbc0c644c63d277816bab29e077d24e1ee8e0e758a)
 in Base Sepolia block 62,183,942,
 [the watcher's reaction](https://lasna.reactscan.net/tx/0xefedfabf02599a4aa51b1bc61f6954013c23852f04f72d65c211512e645c6565)
-in Lasna block 8,981,757,
+in Lasna block 8,981,757, and
 [the lender paid](https://sepolia.basescan.org/tx/0x630d39d3950cd3f8fecd2d7997313cd0041235839c8f1b8b9b65073ace1ff5ba)
-in Base Sepolia block 62,183,949: 7 blocks, 1.4 s.
+in Base Sepolia block 62,183,949. Seven blocks, 1.4 seconds.
 
-Built for the Reactive Omni Buildathon, track *Every Second Counts*. On testnet the full loop, from the
-repayment to the lender being paid, took a median of **1.4 seconds** over 220 measured loops (p99 2.0 s).
+## Contents
+
+- [The problem](#the-problem)
+- [How it works](#how-it-works)
+- [What the Reactive Network does here](#what-the-reactive-network-does-here)
+- [Deployed (testnet)](#deployed-testnet): addresses, [try it](#try-it), [check it yourself](#check-it-yourself), [one loop](#one-loop)
+- [Latency, measured](#latency-measured)
+- [What history says about freed liquidity](#what-history-says-about-freed-liquidity)
+- [The race: what a second buys](#the-race-what-a-second-buys)
+- [Refusals, on-chain](#refusals-on-chain)
+- [Design and safety](#design-and-safety)
+- [Limits](#limits)
+- [Layout](#layout), [build and test](#build-and-test), [the page](#the-page)
+
+## The problem
+
+A Morpho Blue market lends out what its lenders supply. When borrowers have taken all of it, `withdraw` reverts
+for every lender: the market has nothing left to pay them with. Liquidity comes back only when a borrower
+repays, someone supplies, or a position is liquidated. It then goes to the first transaction that asks for it,
+which may be another lender's withdrawal or a new loan. A lender who wants out has to watch the market and be
+first, every time, for as long as the market stays full.
+
+This is not hypothetical. The USR / USDC market on Base has been full since March 2026 with 1.23M USDC of
+lender deposits in it. Seven repayments or liquidations have arrived since then. Five of the seven were first
+drawn on by a new borrower, not by a lender ([the study is below](#what-history-says-about-freed-liquidity)).
+
+Standby replaces "whoever is watching" with "whoever has waited longest".
 
 ## How it works
 
 1. **Join.** A lender authorises `StandbyQueue` on Morpho once and joins with an amount. The position stays in
-   Morpho; the queue never holds lender funds.
+   Morpho and keeps earning; the queue never holds lender funds.
 2. **Watch.** `StandbyWatcher`, a reactive contract on Reactive Lasna, follows the queue's own state. While a
    market has lenders waiting it subscribes to that market's `Repay`, `Supply` and `Liquidate` events on Morpho,
    and unsubscribes when the queue empties.
@@ -31,8 +69,51 @@ repayment to the lender being paid, took a median of **1.4 seconds** over 220 me
    withdraws for the lenders at the front, straight to their own addresses. If the liquidity is already gone
    it pays nothing and changes nothing.
 
-Each callback carries the block of the event that caused it, so the queue records the full-loop latency of
-every settlement on-chain (`lagHistogram()`).
+```mermaid
+sequenceDiagram
+    autonumber
+    participant L as Lender
+    participant B as Borrower
+    participant M as Morpho Blue (Base Sepolia)
+    participant Q as StandbyQueue (Base Sepolia)
+    participant W as StandbyWatcher (Reactive Lasna)
+    participant P as Callback proxy (Base Sepolia)
+    L->>M: setAuthorization(queue, true), once
+    L->>Q: join(market, amount)
+    Q-->>W: QueueState event: a lender is waiting
+    W->>W: subscribe to this market's Repay, Supply, Liquidate
+    B->>M: repay
+    M-->>W: Repay event
+    W->>P: callback request: settle(market, origin block, origin tx)
+    P->>Q: settle, stamped with the watcher's address
+    Q->>M: withdraw for the lender at the front
+    M->>L: loan tokens, to the lender's own address
+```
+
+Each callback carries the block and the transaction hash of the event that caused it. The queue subtracts that
+block from its own and records the full-loop latency of every settlement on-chain (`lagHistogram()`), and its
+`Loop` event names the origin transaction, so any payout can be traced back to the event that freed the money.
+
+## What the Reactive Network does here
+
+The reactive contract is not an add-on. It is the only thing that settles the queue when liquidity returns:
+`settle` cannot be called by a keeper, a bot, or the lenders themselves, only by the callback proxy on behalf of
+the one watcher fixed at deployment. `StandbyWatcher` does four jobs:
+
+- **It follows the queue, not a fixed list of markets.** It subscribes to the queue's `QueueState` event. When a
+  market's first lender joins it opens three Morpho subscriptions for that market, and it closes them when the
+  queue empties. A market nobody is waiting on costs nothing.
+- **It reacts to the three events that put liquidity back**: `Repay`, `Supply` and `Liquidate`, filtered by
+  market id.
+- **It carries the origin through the loop.** The origin block and transaction hash travel inside the callback,
+  which is what lets the queue measure every loop on-chain instead of trusting a script.
+- **It asks again when one callback is not enough.** A callback serves at most six tickets. If more are due and
+  liquidity is left, the queue says so and the watcher requests another callback.
+
+Why the speed of Reactive Omni matters: Omni reads origin-chain logs from the latest block as soon as it
+appears, and that is what puts the payout a median of seven Base Sepolia blocks behind the repayment. The
+[race](#the-race-what-a-second-buys) measures what that buys. The queue is first against any rival slower than
+its own loop, so every second taken off the loop shuts more rivals out.
 
 ## Deployed (testnet)
 
@@ -42,6 +123,7 @@ every settlement on-chain (`lagHistogram()`).
 | `StandbyQueue` | Base Sepolia (84532) | [`0x757CD246b40A7D58c178ABb7CCEDa5Fb60BFf926`](https://sepolia.basescan.org/address/0x757CD246b40A7D58c178ABb7CCEDa5Fb60BFf926) |
 | `TryIt` | Base Sepolia (84532) | [`0x7Bb5EC188C91e91feC5d430944d551Ce8C6b8ffE`](https://sepolia.basescan.org/address/0x7Bb5EC188C91e91feC5d430944d551Ce8C6b8ffE) |
 | Morpho Blue (not ours) | Base Sepolia | `0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb` |
+| Reactive callback proxy (not ours) | Base Sepolia | `0x476F44b11F5C942c58f4c8E3d0300E5710743585` |
 
 All three are source-verified on Sourcify (exact match):
 [watcher](https://repo.sourcify.dev/5318007/0x9FA9c9876325Fd30f5e62D97DbC5A543dAc24414),
@@ -69,6 +151,30 @@ cast call 0x7Bb5EC188C91e91feC5d430944d551Ce8C6b8ffE "outcome(uint256)(uint256,u
 The first call was made by an account that is neither the lender nor the borrower:
 [`0xc9ae43de…f08d3a`](https://sepolia.basescan.org/tx/0xc9ae43de8538416b903ab21352d10ec3a6556a04aef6afd9117618d9a9f08d3a).
 It works while the demo lender still has a ticket open and the queue has callback budget left.
+
+The [live page](https://standbyhq.vercel.app) has a button that sends the same call from a browser wallet and
+then shows the queue's payment arriving. Some wallets warn about newly registered sites; the `cast` command
+above does the same thing without one.
+
+### Check it yourself
+
+Read-only calls against the live queue. None of them needs a key.
+
+```bash
+Q=0x757CD246b40A7D58c178ABb7CCEDa5Fb60BFf926
+M=0x321754d492bcd755a8b2be25eb2662875a132880158d8975b21e823853bd237a
+RPC=https://sepolia.base.org
+
+cast call $Q "loops()(uint64)" --rpc-url $RPC                     # callbacks received so far
+cast call $Q "loopsThatPaid()(uint64)" --rpc-url $RPC             # of those, the ones that paid a lender
+cast call $Q "openTickets(bytes32)(uint256)" $M --rpc-url $RPC    # lenders waiting in the demo market
+cast call $Q "pendingAssets(bytes32)(uint256)" $M --rpc-url $RPC  # what they are owed, 18 decimals
+cast call $Q "liquidity(bytes32)(uint256)" $M --rpc-url $RPC      # what the market can pay now: 0 while it is full
+cast call $Q "lagHistogram()(uint32[64])" --rpc-url $RPC          # settlements by blocks after the origin event
+```
+
+Position `n` of `lagHistogram()` is the number of settlements that landed `n` Base Sepolia blocks after the
+event that caused them. Multiply by 0.2 for seconds.
 
 ### One loop
 
@@ -168,9 +274,9 @@ What this shows, and what it does not:
 - **It shows freed liquidity being lent out again instead of reaching lenders.** In 110 of the 1,103 cases the
   first taker was a new loan, not a withdrawal. In the Base USR / USDC market, stuck since March 2026 with
   1.23M USDC of lender deposits in it (supplies minus withdrawals; Morpho's own page shows about 100M, because
-  unpaid interest keeps accruing), seven repayments or liquidations of 13 to 2,220 USDC arrived while it was full (counting
-  from 10 USDC up); five of the seven were first drawn on by a new borrower, two by a withdrawing lender. The
-  quickest of the seven was touched 92 seconds later.
+  unpaid interest keeps accruing), seven repayments or liquidations of 13 to 2,220 USDC arrived while it was
+  full (counting from 10 USDC up); five of the seven were first drawn on by a new borrower, two by a
+  withdrawing lender. The quickest of the seven was touched 92 seconds later.
 - 176 inflows were taken out again inside the transaction that brought them (a supply and a withdrawal or
   loan in one call). Nothing outside that transaction could have reached them, this queue included.
 
@@ -224,6 +330,29 @@ would have been first for all the others.
 | A callback asked for by another reactive contract ([`Impostor`](src/demo/Impostor.sol), [its request on Lasna](https://lasna.reactscan.net/tx/0x1f83eae43f7824c4f13659b59014789916ae1a1467902e23cb30fd5ef5c8007f)) | The proxy delivered it stamped with the impostor's address; the queue refused it and nothing changed | [`0x3cda0e42…7bafa6`](https://sepolia.basescan.org/tx/0x3cda0e42c1b364399c40a6d328ab815843e23ba62ef41f088542116e007bafa6) |
 | A lender joins, then revokes the queue's authorisation on Morpho; a repayment follows | Their ticket was voided, their position was not touched, and the lender behind them was paid in the same settlement | [`0x06c0de82…c219cb`](https://sepolia.basescan.org/tx/0x06c0de8203d717b9904eee6fad6886d3ace24e9b5ebfd07045bdaa2717c219cb) |
 | A callback that arrives after the liquidity is gone | Paid nothing, changed nothing (54 times in the race) | [`data/race.jsonl`](data/race.jsonl), winner `rival` |
+
+## Design and safety
+
+- **The queue never holds lender funds.** A position stays in Morpho, in the lender's name, earning interest
+  until it is paid out. A payout is a Morpho `withdraw` on the lender's behalf with the lender as receiver, so
+  the tokens go from Morpho to the lender's own address and never pass through the queue.
+- **One permission, revocable.** The only thing a lender grants is Morpho's `setAuthorization` for the queue.
+  Revoking it voids the ticket at the next settlement and touches nothing else. `cancel` leaves the line at any
+  time, and anything already paid stays paid.
+- **Callbacks are authenticated twice.** `settle` requires the caller to be the chain's callback proxy and the
+  request to come from the one watcher address fixed in the constructor. Both refusals are
+  [on-chain](#refusals-on-chain).
+- **Every settlement re-reads the market.** The queue accrues interest and reads Morpho's real liquidity before
+  paying, so a late, repeated or unwanted callback pays nothing and changes nothing.
+- **Strict first-in, first-out, with partial fills.** The front ticket is paid as far as the liquidity goes and
+  keeps its place for the rest. A ticket is capped at the lender's position, and a lender holds one ticket per
+  market.
+- **Bounded work per callback.** At most six tickets are served per call, and the loop stops early when less
+  than 250,000 gas is left for a ticket, so a callback that runs short of gas never voids a ticket by accident.
+- **No owner and no settable parameter on the queue.** The watcher has an owner who can bind the queue once and
+  take back the watcher's own REACT; that owner has no power over the queue or over any lender.
+- **Who pays.** A join costs a fixed fee of 0.000001 ETH, which funds the callbacks; on the Reactive Network the
+  contract that receives a callback pays for it. The watcher pays for its reactions in REACT.
 
 ## Limits
 
@@ -297,4 +426,4 @@ that transaction.
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).
